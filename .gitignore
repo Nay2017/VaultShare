@@ -4,3 +4,4 @@ dist
 .DS_Store
 mongo_data
 backend/public
+.vercel

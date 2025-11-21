@@ -1,38 +1,36 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import { connectDB } from './db.js';
 import fileRoutes from './routes/files.js';
 
 const app = express();
 
-// Max Payload Limit (for metadata headers)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Vercel Limit
+app.use(express.json({ limit: '4mb' }));
+app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 
-connectDB();
+// Connect to DB per request (Serverless best practice)
+const connectToDB = async () => {
+  if (mongoose.connection.readyState === 0) {
+    await connectDB();
+  }
+};
+app.use(async (req, res, next) => {
+  await connectToDB();
+  next();
+});
 
 app.use('/api/files', fileRoutes);
 
-// --- HYBRID HOSTING: Serve Frontend ---
-// This makes the backend act as the web server too
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.static(path.join(__dirname, 'public')));
+// Vercel requires an exported function
+export default app;
 
-// Any request not starting with /api goes to React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => console.log(`SERVER RUNNING ON PORT ${PORT}`));
-
-// --- CRITICAL 4 HOUR TIMEOUT (For 15GB uploads) ---
-const TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 Hours
-server.timeout = TIMEOUT_MS; 
-server.keepAliveTimeout = TIMEOUT_MS;
-server.headersTimeout = TIMEOUT_MS + 5000;
+// Only listen if running locally on your computer
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`LOCAL DEV SERVER: ${PORT}`));
+}

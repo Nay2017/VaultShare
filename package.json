@@ -1,0 +1,10 @@
+{
+  "name": "vaultshare-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd backend && npm install --legacy-peer-deps && cd ../client && npm install --legacy-peer-deps && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

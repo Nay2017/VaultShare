@@ -6,7 +6,8 @@ import { Upload, Copy, Check, Clock, Lock, Shield, FileText, X, ChevronDown, Shi
 import GlassCard from '../components/GlassCard';
 import Button from '../components/Button';
 
-const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+//const API_URL = '';
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin; 
 
 export default function Home() {
   const [file, setFile] = useState(null);

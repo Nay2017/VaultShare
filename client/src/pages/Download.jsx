@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../components/GlassCard';
 import Button from '../components/Button';
 
-//const API_URL = '';
-const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+const API_URL = '';
 
 export default function DownloadPage() {
   const { id } = useParams();

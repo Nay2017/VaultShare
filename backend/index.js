@@ -6,45 +6,40 @@ import { connectDB } from './db.js';
 import fileRoutes from './routes/files.js';
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
-// Limit config (Adjusted for Vercel)
-app.use(express.json({ limit: '4mb' }));
-app.use(express.urlencoded({ extended: true, limit: '4mb' }));
+// 1. Increase Payload Limit (Essential for large files if not streaming directly)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(cors({ origin: true, credentials: true }));
+// 2. CORS Config - Allow your Vercel Frontend to talk to this Backend
+app.use(cors({ 
+  origin: [
+    'http://localhost:5173',              // Local Vite Dev
+    'https://vaultshare-inc.vercel.app',  // Your Vercel Frontend
+    // Add any other frontend URLs here
+  ], 
+  credentials: true 
+}));
 
-// SERVERLESS LOGIC: Check connection on every request
-const connectToDB = async () => {
-  // 0 = disconnected, 1 = connected, 2 = connecting
-  if (mongoose.connection.readyState === 0) {
+// 3. Routes
+app.use('/api/files', fileRoutes);
+
+app.get('/', (req, res) => {
+  res.send('VaultShare Backend is Running');
+});
+
+// 4. Start Server (Updated for Render/Railway support)
+const startServer = async () => {
+  try {
     await connectDB();
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
   }
 };
 
-// Middleware: Connect to DB before handling API routes
-app.use(async (req, res, next) => {
-  await connectToDB();
-  next();
-});
-
-app.use('/api/files', fileRoutes);
-
-// Vercel Health Check
-app.get('/', (req, res) => {
-  res.send('VaultShare Vercel API is Active');
-});
-
-// Export for Vercel
-export default app;
-
-// --- LOCAL DEVELOPMENT SETUP ---
-// Only run this block if we are NOT on Vercel
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  
-  // 1. FORCE DB CONNECTION IMMEDIATELY ON START
-  connectDB().then(() => {
-    // 2. START SERVER ONLY AFTER DB IS READY
-    app.listen(PORT, () => console.log(`✅ LOCAL DEV SERVER RUNNING ON PORT: ${PORT}`));
-  });
-}
+startServer();
